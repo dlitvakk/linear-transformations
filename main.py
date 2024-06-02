@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import cv2
 star = np.array([
     [0, 0],
     [0.75, 0.25],
@@ -28,6 +28,40 @@ tree = np.array([
     [1, 0.75]
 ])
 
+cube_nodes = np.array([
+    [0, 0, 0],
+    [1, 0, 0],
+    [1, 1, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 0, 1],
+    [1, 1, 1],
+    [0, 1, 1]
+])
+
+cube_edges = np.array([
+    [0, 1], [1, 2], [2, 3], [3, 0],
+    [4, 5], [5, 6], [6, 7], [7, 4],
+    [0, 4], [1, 5], [2, 6], [3, 7]
+])
+
+def plot_3d_object(nodes, edges, title):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter3D(nodes[:, 0], nodes[:, 1], nodes[:, 2])
+
+    for edge in edges:
+        points = nodes[edge]
+        ax.plot3D(points[:, 0], points[:, 1], points[:, 2], 'black')
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    ax.set_title(title)
+    plt.show()
+
 
 def plot_object(obj, title):
     plt.figure()
@@ -41,30 +75,31 @@ def plot_object(obj, title):
 
 plot_object(star, "Star")
 plot_object(tree, "Tree")
+plot_3d_object(cube_nodes, cube_edges, "Cube in 3D")
 
 
-def rotate(obj, angle):
+def rotate(object, angle):
     rad = np.deg2rad(angle)
     rotation_matrix = np.array([
         [np.cos(rad), -np.sin(rad)],
         [np.sin(rad), np.cos(rad)]
     ])
-    transformed_obj = obj @ rotation_matrix.T
+    transformed = np.dot(object, rotation_matrix)
     print("Rotation Matrix:\n", rotation_matrix)
-    return transformed_obj
+    return transformed
 
 
-def scale(obj, scope):
+def scale(object, scope):
     scaling_matrix = np.array([
         [scope, 0],
         [0, scope]
     ])
-    transformed_obj = obj @ scaling_matrix.T
+    transformed = np.dot(object, scaling_matrix)
     print("Scaling Matrix:\n", scaling_matrix)
-    return transformed_obj
+    return transformed
 
 
-def reflect(obj, axis):
+def reflect(object, axis):
     if axis == 'x':
         reflection_matrix = np.array([
             [1, 0],
@@ -76,36 +111,37 @@ def reflect(obj, axis):
             [0, 1]
         ])
 
-    transformed_obj = obj @ reflection_matrix.T
+    transformed = np.dot(object, reflection_matrix)
     print("Reflection Matrix:\n", reflection_matrix)
-    return transformed_obj
+    return transformed
 
 
-def shear(obj, shear_factor, axis):
+def shear(object, shear, axis):
     if axis == 'x':
         shear_matrix = np.array([
-            [1, shear_factor],
+            [1, shear],
             [0, 1]
         ])
     elif axis == 'y':
         shear_matrix = np.array([
             [1, 0],
-            [shear_factor, 1]
+            [shear, 1]
         ])
-    else:
-        raise ValueError("Axis must be 'x' or 'y'")
 
-    transformed_obj = obj @ shear_matrix.T
+    transformed = object.dot(shear_matrix.T)
     print("Shear Matrix:\n", shear_matrix)
-    return transformed_obj
+    return transformed
 
+def custom(object, matrix):
+    transformed = np.dot(object, matrix)
+    print("Custom Matrix:\n", matrix)
+    return transformed
 
+rotated_star = rotate(star, 50)
+plot_object(rotated_star, "Rotated Star by 50 degrees")
 
-rotated_star = rotate(star, 78)
-plot_object(rotated_star, "Rotated Star by 78 degrees")
-
-rotated_tree = rotate(tree, 100)
-plot_object(rotated_tree, "Rotated Tree by 100 degrees")
+rotated_tree = rotate(tree, 150)
+plot_object(rotated_tree, "Rotated Tree by 150 degrees")
 
 
 scaled_star = scale(star, 5)
@@ -115,11 +151,11 @@ scaled_tree = scale(tree, 2)
 plot_object(scaled_tree, "Scaled Tree by factor of 2")
 
 
-reflected_star = reflect(star, 'x')
-plot_object(reflected_star, "Reflected Star over x-axis")
+reflected_star = reflect(star, 'y')
+plot_object(reflected_star, "Reflected Star over y-axis")
 
-reflected_tree = reflect(tree, 'y')
-plot_object(reflected_tree, "Reflected Tree over y-axis")
+reflected_tree = reflect(tree, 'x')
+plot_object(reflected_tree, "Reflected Tree over x-axis")
 
 
 sheared_star = shear(star, 2, 'x')
@@ -127,3 +163,84 @@ plot_object(sheared_star, "Sheared Star over x-axis")
 
 sheared_tree = shear(tree, 3, 'y')
 plot_object(sheared_tree, "Sheared Tree over y-axis")
+
+custom_star = custom(star, [[2, 3], [6, 0]])
+plot_object(custom_star, "Custom Star")
+custom_tree = custom(tree, [[-5, 1], [3, -2]])
+plot_object(custom_tree, "Custom Tree")
+
+####
+def rotate_cv(object, angle):
+    M = cv2.getRotationMatrix2D((0, 0), angle, 1)
+
+    ones = np.ones((object.shape[0], 1))
+    points = np.hstack([object, ones])
+    rotated_points = M.dot(points.T).T
+    print("Rotation Matrix:\n", M)
+    return rotated_points
+
+
+def scale_cv(object, scope):
+    M = np.array([
+        [scope, 0, 0],
+        [0, scope, 0]
+    ])
+    ones = np.ones(shape=(len(object), 1))
+    points = np.hstack([object, ones])
+
+    scaled_points = M.dot(points.T).T
+    scaled_points = scaled_points.T
+    print("Scaling Matrix:\n", M)
+    return scaled_points[:, :2]
+
+def reflect_cv(object, axis):
+    if axis == 'x':
+        reflection_matrix = np.array([
+            [1, 0, 0],
+            [0, -1, 0]
+        ], dtype=np.float32)
+    elif axis == 'y':
+        reflection_matrix = np.array([
+            [-1, 0, 0],
+            [0, 1, 0]
+        ], dtype=np.float32)
+
+    reflected_points = cv2.transform(np.array([object]), reflection_matrix)[0]
+    print("Reflection Matrix:\n", reflection_matrix)
+    return reflected_points
+
+def shear_cv(object, shear, axis):
+    if axis == 'x':
+        shear_matrix = np.array([
+            [1, shear, 0],
+            [0, 1, 0]
+        ], dtype=np.float32)
+    elif axis == 'y':
+        shear_matrix = np.array([
+            [1, 0, 0],
+            [shear, 1, 0]
+        ], dtype=np.float32)
+
+    sheared_points = cv2.transform(np.array([object]), shear_matrix)[0]
+    print("Shear Matrix:\n", shear_matrix)
+    return sheared_points
+
+rotated_star_cv = rotate_cv(star, 50)
+rotated_tree_cv = rotate_cv(tree, 150)
+plot_object(rotated_star_cv, "Rotated Star by 50 degrees (OpenCV)")
+plot_object(rotated_tree_cv, "Rotated Tree by 150 degrees (OpenCV)")
+
+scaled_star_cv = scale_cv(star, 5)
+plot_object(scaled_star_cv, "Scaled Star by Factor of 5 (OpenCV)")
+scaled_tree_cv = scale_cv(tree, 2)
+plot_object(scaled_tree_cv, "Scaled Tree by Factor of 2 (OpenCV)")
+
+reflected_star_cv = reflect_cv(star, 'y')
+plot_object(reflected_star_cv, "Reflected Star over y-axis (OpenCV)")
+reflected_tree_cv = reflect_cv(tree, 'x')
+plot_object(reflected_tree_cv, "Reflected Tree over x-axis (OpenCV)")
+
+sheared_star_cv = shear_cv(star, 2, 'x')
+plot_object(sheared_star_cv, "Sheared Star over x-axis (OpenCV)")
+sheared_tree_cv = shear_cv(tree, 3, 'y')
+plot_object(sheared_tree_cv, "Sheared Tree over y-axis (OpenCV)")
