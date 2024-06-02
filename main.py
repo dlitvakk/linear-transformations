@@ -298,3 +298,25 @@ sheared_star_cv = shear_cv(star, 2, 'x')
 plot_object(sheared_star_cv, "Sheared Star over x-axis (OpenCV)")
 sheared_tree_cv = shear_cv(tree, 3, 'y')
 plot_object(sheared_tree_cv, "Sheared Tree over y-axis (OpenCV)")
+
+###
+path = "/Users/dlitvakk21/Downloads/Cat_August_2010-4.jpg"
+image = cv2.imread(path)
+
+def rotate_image(image, angle):
+    rotation_matrix = cv2.getRotationMatrix2D((0,0), angle, 1.0)
+    rotated_image = cv2.warpAffine(image, rotation_matrix, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+    return rotated_image
+
+def shear_image(image, shear_x, shear_y):
+    shear_matrix = np.array([
+        [1, shear_x, 0],
+        [shear_y, 1, 0]
+    ], dtype=np.float32)
+    sheared_image = cv2.warpAffine(image, shear_matrix, (image.shape[1], image.shape[0]), flags=cv2.INTER_LINEAR)
+    return sheared_image
+
+rotated_image = rotate_image(image, 45)
+plt.imshow(cv2.cvtColor(rotated_image, cv2.COLOR_BGR2RGB))
+sheared_image = shear_image(rotated_image, 15, 20)
+plt.imshow(cv2.cvtColor(sheared_image, cv2.COLOR_BGR2RGB))
