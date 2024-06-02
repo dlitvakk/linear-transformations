@@ -168,7 +168,61 @@ custom_star = custom(star, [[2, 3], [6, 0]])
 plot_object(custom_star, "Custom Star")
 custom_tree = custom(tree, [[-5, 1], [3, -2]])
 plot_object(custom_tree, "Custom Tree")
+###
 
+def rotate_3d(object, angle, axis):
+    rad = np.deg2rad(angle)
+    if axis == 'x':
+        rotation_matrix = np.array([
+            [1, 0, 0],
+            [0, np.cos(rad), -np.sin(rad)],
+            [0, np.sin(rad), np.cos(rad)]
+        ])
+    elif axis == 'y':
+        rotation_matrix = np.array([
+            [np.cos(rad), 0, np.sin(rad)],
+            [0, 1, 0],
+            [-np.sin(rad), 0, np.cos(rad)]
+        ])
+    elif axis == 'z':
+        rotation_matrix = np.array([
+            [np.cos(rad), -np.sin(rad), 0],
+            [np.sin(rad), np.cos(rad), 0],
+            [0, 0, 1]
+        ])
+    transformed = np.dot(object, rotation_matrix.T)
+    print("Rotation Matrix:\n", rotation_matrix)
+    return transformed
+
+def shear_3d(object, shear, axis):
+    if axis == 'x':
+        shear_matrix = np.array([
+            [1, shear, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ])
+    elif axis == 'y':
+        shear_matrix = np.array([
+            [1, 0, 0],
+            [shear, 1, 0],
+            [0, 0, 1]
+        ])
+    elif axis == 'z':
+        shear_matrix = np.array([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, shear, 1]
+        ])
+
+    transformed = object.dot(shear_matrix.T)
+    print("Shear Matrix:\n", shear_matrix)
+    return transformed
+
+rotated_cube = rotate_3d(cube_nodes, 50, 'x')
+plot_3d_object(rotated_cube, cube_edges , "Cube Rotated by 45 Degrees (x-axis)")
+
+sheared_cube = shear_3d(cube_nodes, 15, 'y')
+plot_3d_object(sheared_cube, cube_edges , "Cube Sheared by 15 (y-axis)")
 ####
 def rotate_cv(object, angle):
     M = cv2.getRotationMatrix2D((0, 0), angle, 1)
